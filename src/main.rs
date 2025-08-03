@@ -1,6 +1,6 @@
 use chrono::Local;
 use fstrings::*;
-use std::{env, fs, process, process::Command};
+use std::{env, fs, path::PathBuf, process, process::Command};
 use whoami;
 
 /// Show usage/help message
@@ -34,35 +34,23 @@ Notes:
 fn get_template(template_name: &str, titel: &str, author: &str, date: &str) -> String {
     // Danish A-level math homework/exam template as default
     let default: String = f!(r#"\documentclass[11pt,a4paper]{{article}}
-
 \usepackage[utf8]{{inputenc}}
 \usepackage[T1]{{fontenc}}
 \usepackage[danish]{{babel}}
 \usepackage{{amsmath, amssymb, amsfonts}}
 \usepackage{{geometry}}
+\geometry{{ top=2.5cm, bottom=2.5cm, left=3cm, right=3cm }}
 \usepackage{{fancyhdr}}
 \usepackage{{lastpage}}
-\usepackage{{graphicx}}
-\usepackage{{enumitem}}
-\usepackage{{hyperref}}
-
-% Margins
-\geometry{{
-  top=2.5cm,
-  bottom=2.5cm,
-  left=3cm,
-  right=3cm
-}}
-
-% Header and footer
 \pagestyle{{fancy}}
 \fancyhf{{}}
 \fancyhead[L]{{\textbf{{Matematik A - Opgave}}}}
-\fancyhead[C]{{}}
 \fancyhead[R]{{\thepage\ af \pageref{{LastPage}}}}
-\fancyfoot[C]{{}}
+\usepackage{{graphicx}}
+\graphicspath{{{{figures/}}}}
+\usepackage{{enumitem}}
+\usepackage{{hyperref}}
 
-% Document info (to be replaced by your code)
 \title{{\textbf{{{titel}}}}}
 \author{{Navn: {author}}}
 \date{{Dato: {date}}}
@@ -73,22 +61,14 @@ fn get_template(template_name: &str, titel: &str, author: &str, date: &str) -> S
 \thispagestyle{{fancy}}
 
 \section*{{Opgave 1}}
-% Skriv opgave 1 her
-\begin{{enumerate}}[label=(\alph*)]
-  \item 
-  \item 
-  \item 
-\end{{enumerate}}
+\subsection*{{(a)}} Tekst og udregninger her.
 
-\section*{{Opgave 2}}
-% Skriv opgave 2 her
-\begin{{enumerate}}[label=(\alph*)]
-  \item 
-  \item 
-  \item 
-\end{{enumerate}}
-
-% Tilføj flere opgaver efter behov
+\subsection*{{(b)}} Eksempel på graf:
+\begin{{figures}}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{{graf1.pdf}}
+    \caption{{Graf over funktion $f(x)$.}}
+\end{{figures}}
 
 \end{{document}}
 "#);
@@ -122,9 +102,6 @@ fn main() {
         process::exit(0);
     }
 
-    // Get template content with variables substituted
-    let template_content = get_template(&template_name, &titel, &author, &date);
-
     // Print debug info
     println!("Title: {}", titel);
     println!("Date: {}", date);
@@ -142,24 +119,44 @@ fn main() {
     // Make sure the filename is safe (replace spaces with underscores)
     let safe_title = titel.replace(' ', "_");
 
-    // Build the full file path inside the texcli folder
-    let mut filepath = texcli_dir.clone();
-    filepath.push(format!("{safe_title}.tex"));
+    let mut root_path = PathBuf::from(&documents_dir);
+    root_path.push("texcli");
+    root_path.push(&safe_title);
 
-    // Avoid overwriting if file already exists.
-    if filepath.exists() {
-        println!(
-            "File '{}' already exists. Opening file without changes.",
-            filepath.display()
-        );
+    let latex_dir = root_path.join("latex");
+    let figures_dir = latex_dir.join("figures");
+    let notebook_dir = root_path.join("notebook");
+
+    // Create directories
+    fs::create_dir_all(&figures_dir).expect("Failed to create figures directory");
+    fs::create_dir_all(&notebook_dir).expect("Failed to create notebook directory");
+
+    // LaTeX file path
+    let tex_file = latex_dir.join("main.tex");
+
+    if tex_file.exists() {
+        println!("Error: '{}' already exists. Aborting.", tex_file.display());
     } else {
-        // Write the LaTeX content to the file
-        fs::write(&filepath, template_content).expect("Failed to write LaTeX file");
-        println!("Written LaTeX file to: {}", filepath.display());
+        fs::write(
+            &tex_file,
+            get_template(&template_name, &titel, &author, &date),
+        )
+        .expect("Failed to write LaTeX file");
     }
+    // Create empty Jupyter notebook
+    let notebook_content = r#"{
+ "cells": [],
+ "metadata": {},
+ "nbformat": 4,
+ "nbformat_minor": 5
+}"#;
+    fs::write(notebook_dir.join("work.ipynb"), notebook_content)
+        .expect("Failed to create Jupyter notebook");
+
+    println!("Created assignment folder at: {}", root_path.display());
 
     // Try to open the file in VSCode
-    let status = Command::new("code").arg(filepath).status();
+    let status = Command::new("code").arg(root_path).status();
 
     match status {
         Ok(status) if status.success() => println!("Opened file in VSCode."),

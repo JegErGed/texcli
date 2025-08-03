@@ -9,10 +9,12 @@ Perfect for creating math homework, exams, reports, and other documents with min
 
 - 🖋 **Pre‑made templates** — Default Danish A‑level math homework/exam template included.
 - 📅 **Automatic date & author** — Fills in current date and your real name automatically.
-- 🛡 **Safe** — Won’t overwrite existing files; only opens file if it already exists.
+- 🛡 **Safe** — Won’t overwrite existing files; aborts if the target `.tex` file already exists.
 - ⚡ **Fast** — Creates and opens your `.tex` file in microseconds.
 - 🔤 **Safe filenames** — Spaces in the title are automatically replaced with underscores in the filename.
-- 📂 **Organized** — Files are always saved in your **Documents/texcli** folder.
+- 📂 **Organized** — Files are always saved in your **Documents/texcli** folder, with a structured subfolder layout including `latex`, `figures`, and `notebook`.
+- 📓 **Jupyter notebook** — Creates an empty `work.ipynb` notebook alongside the LaTeX files for integrated computational notes.
+- 🚀 **Opens project folder in VSCode** after creation, so you can start editing right away.
 
 ---
 
@@ -95,9 +97,16 @@ Make sure `latexmk` is in your `$PATH`.
 # Create a new math homework file
 texcli "Differentialregning opgave" "2025-08-03" "Johan" default
 
+# The folder structure:
+# ~/Documents/texcli/Differentialregning_opgave/
+# ├── latex/
+# │   ├── main.tex
+# │   └── figures/
+# └── notebook/
+#     └── work.ipynb
+
 # Edit it anytime with:
-code ~/Documents/Differentialregning_opgave.tex
-```
+code ~/Documents/texcli/Differentialregning_opgave```
 
 ---
 
