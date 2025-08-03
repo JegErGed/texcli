@@ -1,0 +1,11 @@
+[package]
+name = "texcli"
+version = "0.1.0"
+edition = "2024"
+author = "Johan Uglebjerg Høck"
+
+[dependencies]
+chrono = { version = "^0.4", features = ["serde"] }
+dirs = "6.0.0"
+fstrings = "0.2.3"
+whoami = "1.6.0"
