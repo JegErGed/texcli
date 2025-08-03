@@ -1,6 +1,6 @@
 use chrono::Local;
 use fstrings::*;
-use std::{env, fs, path::PathBuf, process, process::Command};
+use std::{env, fs, process, process::Command};
 use whoami;
 
 /// Show usage/help message
@@ -33,8 +33,7 @@ Notes:
 /// Get LaTeX template and fill in variables
 fn get_template(template_name: &str, titel: &str, author: &str, date: &str) -> String {
     // Danish A-level math homework/exam template as default
-    let default: String = f!(r#"
-\documentclass[11pt,a4paper]{{article}}
+    let default: String = f!(r#"\documentclass[11pt,a4paper]{{article}}
 
 \usepackage[utf8]{{inputenc}}
 \usepackage[T1]{{fontenc}}
@@ -147,19 +146,17 @@ fn main() {
     let mut filepath = texcli_dir.clone();
     filepath.push(format!("{safe_title}.tex"));
 
-    // Abort if file already exists.
+    // Avoid overwriting if file already exists.
     if filepath.exists() {
-        eprintln!(
-            "Error: File '{}' already exists. Aborting to avoid overwrite.",
+        println!(
+            "File '{}' already exists. Opening file without changes.",
             filepath.display()
         );
-        std::process::exit(1);
+    } else {
+        // Write the LaTeX content to the file
+        fs::write(&filepath, template_content).expect("Failed to write LaTeX file");
+        println!("Written LaTeX file to: {}", filepath.display());
     }
-
-    // Write the LaTeX content to the file
-    fs::write(&filepath, template_content).expect("Failed to write LaTeX file");
-
-    println!("Written LaTeX file to: {}", filepath.display());
 
     // Try to open the file in VSCode
     let status = Command::new("code").arg(filepath).status();
