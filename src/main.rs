@@ -1,6 +1,6 @@
 use chrono::Local;
 use fstrings::*;
-use std::{env, fs, path::PathBuf, process::Command, process};
+use std::{env, fs, path::PathBuf, process, process::Command};
 use whoami;
 
 /// Show usage/help message
@@ -112,7 +112,10 @@ fn main() {
     let titel = args.get(1).cloned().unwrap_or(f!("Opgave {cur_date}"));
     let date = args.get(2).cloned().unwrap_or(cur_date.clone());
     let author = args.get(3).cloned().unwrap_or(username.clone());
-    let template_name = args.get(4).cloned().unwrap_or_else(|| "default".to_string());
+    let template_name = args
+        .get(4)
+        .cloned()
+        .unwrap_or_else(|| "default".to_string());
 
     // Show help if requested
     if args.len() > 1 && (args[1] == "--help" || args[1] == "-h") {
@@ -132,16 +135,24 @@ fn main() {
     // Get Documents directory path for the current user
     let documents_dir = dirs::document_dir().expect("Could not find Documents directory");
 
+    // Create a "texcli" subfolder in Documents
+    let mut texcli_dir = documents_dir.clone();
+    texcli_dir.push("texcli");
+    fs::create_dir_all(&texcli_dir).expect("Failed to create texcli directory");
+
     // Make sure the filename is safe (replace spaces with underscores)
     let safe_title = titel.replace(' ', "_");
 
-    // Build the full file path
-    let mut filepath = PathBuf::from(&documents_dir);
+    // Build the full file path inside the texcli folder
+    let mut filepath = texcli_dir.clone();
     filepath.push(format!("{safe_title}.tex"));
 
     // Abort if file already exists.
     if filepath.exists() {
-        eprintln!("Error: File '{}' already exists. Aborting to avoid overwrite.", filepath.display());
+        eprintln!(
+            "Error: File '{}' already exists. Aborting to avoid overwrite.",
+            filepath.display()
+        );
         std::process::exit(1);
     }
 
@@ -151,9 +162,7 @@ fn main() {
     println!("Written LaTeX file to: {}", filepath.display());
 
     // Try to open the file in VSCode
-    let status = Command::new("code")
-        .arg(filepath)
-        .status();
+    let status = Command::new("code").arg(filepath).status();
 
     match status {
         Ok(status) if status.success() => println!("Opened file in VSCode."),
