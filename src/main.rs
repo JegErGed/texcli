@@ -1,6 +1,6 @@
 use chrono::Local;
 use fstrings::*;
-use std::{env, fs, path::PathBuf, process, process::Command};
+use std::{env, fs, path::PathBuf, process::{self, Command}};
 use whoami;
 
 /// Show usage/help message
@@ -47,7 +47,7 @@ fn get_template(template_name: &str, titel: &str, author: &str, date: &str) -> S
 \fancyhead[L]{{\textbf{{Matematik A - Opgave}}}}
 \fancyhead[R]{{\thepage\ af \pageref{{LastPage}}}}
 \usepackage{{graphicx}}
-\graphicspath{{{{figures/}}}}
+\graphicspath{{{{figure/}}}}
 \usepackage{{enumitem}}
 \usepackage{{hyperref}}
 
@@ -64,11 +64,11 @@ fn get_template(template_name: &str, titel: &str, author: &str, date: &str) -> S
 \subsection*{{(a)}} Tekst og udregninger her.
 
 \subsection*{{(b)}} Eksempel på graf:
-\begin{{figures}}[h]
+\begin{{figure}}[h]
     \centering
-    \includegraphics[width=0.8\textwidth]{{graf1.pdf}}
+    \includegraphics[width=0.8\textwidth]{{sample-graph.pdf}}
     \caption{{Graf over funktion $f(x)$.}}
-\end{{figures}}
+\end{{figure}}
 
 \end{{document}}
 "#);
@@ -80,6 +80,20 @@ fn get_template(template_name: &str, titel: &str, author: &str, date: &str) -> S
             default
         }
     }
+}
+
+fn write_sample_graph(latex_dir: &PathBuf) -> std::io::Result<()> {
+    let bytes = include_bytes!("assets/sample-graph.pdf"); // Embed file at compile time
+    let fig_dir = latex_dir.join("figure");
+
+    fs::create_dir_all(&fig_dir)?;
+    let file_path = fig_dir.join("sample-graph.pdf");
+
+    if !file_path.exists() {
+        fs::write(&file_path, bytes)?;
+        println!("Created sample-graph.pdf in {:?}", fig_dir);
+    }
+    Ok(())
 }
 
 fn main() {
@@ -124,11 +138,12 @@ fn main() {
     root_path.push(&safe_title);
 
     let latex_dir = root_path.join("latex");
-    let figures_dir = latex_dir.join("figures");
+    let figure_dir = latex_dir.join("figure");
     let notebook_dir = root_path.join("notebook");
+    write_sample_graph(&latex_dir).unwrap();
 
     // Create directories
-    fs::create_dir_all(&figures_dir).expect("Failed to create figures directory");
+    fs::create_dir_all(&figure_dir).expect("Failed to create figure directory");
     fs::create_dir_all(&notebook_dir).expect("Failed to create notebook directory");
 
     // LaTeX file path
